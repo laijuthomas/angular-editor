@@ -11,3 +11,37 @@
     transition: 0.2s ease;
   }
 }
+.angular-editor-popup {
+  $self: &;
+  position: absolute;
+  top: 72px;
+  box-shadow: rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+  border-radius: 4px;
+  background-color: white;
+  z-index: 10;
+  min-width: 192px;
+  padding: 8px;
+
+  .angular-editor-popup-form-group {
+    margin-bottom: 8px;
+
+    label {
+      margin-bottom: 3px;
+    }
+
+    input[type="text"],
+    input[type="url"] {
+      padding: 2px 4px;
+    }
+  }
+
+  .angular-editor-popup-col {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .angular-editor-popup-label {
+    font-size: 85%;
+  }
+}

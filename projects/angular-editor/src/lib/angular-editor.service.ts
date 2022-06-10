@@ -170,8 +170,12 @@ export class AngularEditorService {
    * Insert image with Url
    * @param imageUrl The imageUrl.
    */
-  insertImage(imageUrl: string) {
-    this.doc.execCommand('insertImage', false, imageUrl);
+  insertImage(imageUrl: string, formData?) {
+    const id = "rand" + Math.random();
+    const alt = formData && formData['alt'] ? formData['alt'] : '';
+    const title = formData && formData['title'] ? formData['title'] : '';
+    const img = "<img src='" + imageUrl + "' id=" + id + " alt=" + alt + " title=" + title + ">";
+    this.insertHtml(img);
   }
 
   setDefaultParagraphSeparator(separator: string) {

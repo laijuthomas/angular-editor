@@ -1,9 +1,10 @@
-import {Component, ElementRef, EventEmitter, Inject, Input, Output, Renderer2, ViewChild} from '@angular/core';
-import {AngularEditorService, UploadResponse} from './angular-editor.service';
-import {HttpResponse, HttpEvent} from '@angular/common/http';
-import {DOCUMENT} from '@angular/common';
-import {CustomClass} from './config';
-import {SelectOption} from './ae-select/ae-select.component';
+import { Component, ElementRef, EventEmitter, HostListener, Inject, Input, Output, Renderer2, ViewChild } from '@angular/core';
+import { AngularEditorService, UploadResponse } from './angular-editor.service';
+import { HttpResponse, HttpEvent } from '@angular/common/http';
+import { DOCUMENT } from '@angular/common';
+import { CustomClass } from './config';
+import { SelectOption } from './ae-select/ae-select.component';
+import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -102,7 +103,7 @@ export class AngularEditorToolbarComponent {
   customClassId = '-1';
   // tslint:disable-next-line:variable-name
   _customClasses: CustomClass[];
-  customClassList: SelectOption[] = [{label: '', value: ''}];
+  customClassList: SelectOption[] = [{ label: '', value: '' }];
   // uploadUrl: string;
 
   tagMap = {
@@ -119,14 +120,14 @@ export class AngularEditorToolbarComponent {
   @Input() uploadUrl: string;
   @Input() upload: (file: File) => Observable<HttpEvent<UploadResponse>>;
   @Input() showToolbar: boolean;
-  @Input() fonts: SelectOption[] = [{label: '', value: ''}];
+  @Input() fonts: SelectOption[] = [{ label: '', value: '' }];
 
   @Input()
   set customClasses(classes: CustomClass[]) {
     if (classes) {
       this._customClasses = classes;
-      this.customClassList = this._customClasses.map((x, i) => ({label: x.name, value: i.toString()}));
-      this.customClassList.unshift({label: 'Clear Class', value: '-1'});
+      this.customClassList = this._customClasses.map((x, i) => ({ label: x.name, value: i.toString() }));
+      this.customClassList.unshift({ label: 'Clear Class', value: '-1' });
     }
   }
 
@@ -148,7 +149,11 @@ export class AngularEditorToolbarComponent {
 
   @Output() execute: EventEmitter<string> = new EventEmitter<string>();
 
-  @ViewChild('fileInput', {static: true}) myInputFile: ElementRef;
+  @ViewChild('fileInput', { static: true }) myInputFile: ElementRef;
+
+  showImagePopup: boolean;
+  imageForm: FormGroup;
+  imageFile: any;
 
   public get isLinkButtonDisabled(): boolean {
     return this.htmlMode || !Boolean(this.editorService.selectedText);
@@ -160,6 +165,18 @@ export class AngularEditorToolbarComponent {
     private er: ElementRef,
     @Inject(DOCUMENT) private doc: any
   ) {
+
+    this.imageForm = new FormGroup({
+      src: new FormControl('', Validators.required),
+      alt: new FormControl(''),
+      title: new FormControl(''),
+    });
+  }
+
+  @HostListener('document:mousedown', ['$event']) onDocumentClick(e: MouseEvent): void {
+    if (!this.er.nativeElement.contains(e.target) && this.showImagePopup) {
+      this.hideForm();
+    }
   }
 
   /**
@@ -311,30 +328,54 @@ export class AngularEditorToolbarComponent {
     this.htmlMode = m;
   }
 
+  triggerImageButton() {
+    this.showImagePopup = !this.showImagePopup;
+  }
+
+  insertImage() {
+    this.focus();
+    const file = this.imageForm.get('src').value;
+    if (this.upload) {
+      this.upload(file).subscribe(() => this.watchUploadImage);
+    } else if (this.uploadUrl) {
+      this.editorService.uploadImage(file).subscribe(() => this.watchUploadImage);
+    } else {
+      this.editorService.insertImage(this.imageFile, this.imageForm.value);
+    }
+    this.hideForm();
+  }
+
+  hideForm() {
+    this.showImagePopup = false;
+    this.imageForm.reset({
+      src: '',
+      alt: '',
+      title: '',
+    });
+  }
+
   /**
    * Upload image when file is selected.
    */
   onFileChanged(event) {
+    this.imageFile = event;
     const file = event.target.files[0];
+    this.imageForm.get('src').setValue(file);
     if (file.type.includes('image/')) {
-        if (this.upload) {
-          this.upload(file).subscribe(() => this.watchUploadImage);
-        } else if (this.uploadUrl) {
-            this.editorService.uploadImage(file).subscribe(() => this.watchUploadImage);
-        } else {
-          const reader = new FileReader();
-          reader.onload = (e: ProgressEvent) => {
-            const fr = e.currentTarget as FileReader;
-            this.editorService.insertImage(fr.result.toString());
-          };
-          reader.readAsDataURL(file);
-        }
+      if (!this.upload && !this.uploadUrl) {
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent) => {
+          const fr = e.currentTarget as FileReader;
+          this.imageFile = fr.result.toString();
+        };
+        reader.readAsDataURL(file);
       }
+    }
   }
 
-  watchUploadImage(response: HttpResponse<{imageUrl: string}>, event) {
+  watchUploadImage(response: HttpResponse<{ imageUrl: string }>, event) {
     const { imageUrl } = response.body;
-    this.editorService.insertImage(imageUrl);
+    this.editorService.insertImage(imageUrl, this.imageForm.value);
     event.srcElement.value = null;
   }
 
