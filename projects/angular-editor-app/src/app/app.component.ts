@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
-import {AngularEditorConfig} from 'angular-editor';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
+import { AngularEditorConfig } from 'projects/angular-editor/src/lib/config';
 
 @Component({
   selector: 'app-root',
@@ -10,7 +10,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 export class AppComponent implements OnInit {
   title = 'app';
 
-  form: FormGroup;
+  form: UntypedFormGroup;
 
   htmlContent1 = '';
   htmlContent2 = '';
@@ -79,7 +79,7 @@ export class AppComponent implements OnInit {
     ]
   };
 
-  constructor(private formBuilder: FormBuilder) {}
+  constructor(private formBuilder: UntypedFormBuilder) {}
 
   ngOnInit() {
     this.form = this.formBuilder.group({
